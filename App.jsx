@@ -13,20 +13,27 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Derived Stats calculated from actual data
-  const totalRevenue = Array.isArray(tenants) ? tenants.reduce((sum, t) => sum + (Number(t.monthlyRent) || 0), 0) : 0;
+  const totalRevenue = Array.isArray(tenants) 
+    ? tenants.reduce((sum, t) => sum + (t ? Number(t.monthlyRent) || 0 : 0), 0) 
+    : 0;
+    
   const occupancyRate = Array.isArray(tenants) ? Math.min(Math.round((tenants.length / 20) * 100), 100) : 0;
+  
   const overdueCount = Array.isArray(tenants) ? tenants.filter(t => {
+    if (!t || typeof t.dueDay === 'undefined') return false;
     const currentDate = new Date();
     const currentDayOfMonth = currentDate.getDate();
     return currentDayOfMonth > t.dueDay && !t.paidStatus;
   }).length : 0;
 
   // Filter tenants based on search term
-  const filteredTenants = tenants.filter(t => {
+  const filteredTenants = Array.isArray(tenants) ? tenants.filter(t => {
+    if (!t) return false;
     const search = searchTerm.toLowerCase();
-    return (t.name || "").toString().toLowerCase().includes(search) || 
-           (t.unitInfo || "").toString().toLowerCase().includes(search);
-  });
+    const nameMatch = (t.name || "").toString().toLowerCase().includes(search);
+    const unitMatch = (t.unitInfo || "").toString().toLowerCase().includes(search);
+    return nameMatch || unitMatch;
+  }) : [];
 
   const loadData = async (isManual = false) => {
     if (isManual) setRefreshing(true);
@@ -177,11 +184,18 @@ function App() {
       <h2 className="text-xl font-bold mb-4 text-gray-900" style={{ color: 'var(--tg-theme-text-color)' }}>
         {searchTerm ? `Search Results (${filteredTenants.length})` : 'Tenant List'}
       </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredTenants.map(tenant => (
-          <TenantCard key={tenant.id} tenant={tenant} onTogglePaid={handleTogglePaid} />
-        ))}
-      </div>
+
+      {filteredTenants.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredTenants.map(tenant => (
+            <TenantCard key={tenant.id || Math.random()} tenant={tenant} onTogglePaid={handleTogglePaid} />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center p-8 bg-white rounded-xl shadow-sm text-gray-500">
+          No tenants found matching your criteria.
+        </div>
+      )}
     </div>
   );
 }

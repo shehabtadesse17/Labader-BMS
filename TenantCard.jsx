@@ -16,11 +16,14 @@ const TenantCard = ({ tenant, onTogglePaid }) => {
   `;
 
   // Format date for display (e.g., "Jan 15, 2023")
-  const formattedMemberSince = new Date(memberSince).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  const dateObj = memberSince ? new Date(memberSince) : null;
+  const formattedMemberSince = (dateObj && !isNaN(dateObj)) 
+    ? dateObj.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })
+    : 'N/A';
 
   return (
     <div className={cardClasses}>
