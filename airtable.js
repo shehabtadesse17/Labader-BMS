@@ -29,15 +29,21 @@ export const fetchTenants = async () => {
     }
 
     const text = await response.text();
+    let data;
     try {
-      return JSON.parse(text);
+      data = JSON.parse(text);
     } catch (e) {
       console.error("Received non-JSON response:", text);
       throw new Error("The server did not return valid JSON. Check your Google Script deployment.");
     }
+
+    if (!Array.isArray(data)) {
+      throw new Error("Expected an array of tenants, but received something else. Check your Google Script output.");
+    }
+    return data;
   } catch (error) {
-    console.error("Error fetching tenants:", error);
-    return [];
+    console.error("Fetch failed:", error);
+    throw error; // Rethrow so App.jsx can catch it and update the UI
   }
 };
 

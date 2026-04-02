@@ -11,13 +11,13 @@ function App() {
   const [showForm, setShowForm] = useState(false);
 
   // Derived Stats calculated from actual data
-  const totalRevenue = tenants.reduce((sum, t) => sum + (Number(t.monthlyRent) || 0), 0);
-  const occupancyRate = Math.min(Math.round((tenants.length / 20) * 100), 100); // Assuming a 20-unit building capacity
-  const overdueCount = tenants.filter(t => {
+  const totalRevenue = Array.isArray(tenants) ? tenants.reduce((sum, t) => sum + (Number(t.monthlyRent) || 0), 0) : 0;
+  const occupancyRate = Array.isArray(tenants) ? Math.min(Math.round((tenants.length / 20) * 100), 100) : 0;
+  const overdueCount = Array.isArray(tenants) ? tenants.filter(t => {
     const currentDate = new Date();
     const currentDayOfMonth = currentDate.getDate();
     return currentDayOfMonth > t.dueDay && !t.paidStatus;
-  }).length;
+  }).length : 0;
 
   useEffect(() => {
     // Initialize Telegram Web App
@@ -77,8 +77,8 @@ function App() {
     }
   };
 
+  if (error) return <div className="p-4 text-center text-red-500">Error: {error.message}</div>;
   if (loading) return <div className="p-4 text-center text-gray-600">Loading tenants...</div>;
-  if (error) return <div className="p-4 text-center text-red-500">Error: {error.message}. Using mock data.</div>;
 
   return (
     <div className="min-h-screen bg-gray-100 p-4 font-sans" style={{ backgroundColor: 'var(--tg-theme-bg-color)' }}>
