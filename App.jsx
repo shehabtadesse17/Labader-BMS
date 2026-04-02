@@ -9,6 +9,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Derived Stats calculated from actual data
   const totalRevenue = Array.isArray(tenants) ? tenants.reduce((sum, t) => sum + (Number(t.monthlyRent) || 0), 0) : 0;
@@ -18,6 +19,12 @@ function App() {
     const currentDayOfMonth = currentDate.getDate();
     return currentDayOfMonth > t.dueDay && !t.paidStatus;
   }).length : 0;
+
+  // Filter tenants based on search term
+  const filteredTenants = tenants.filter(t => 
+    t.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    t.unitInfo.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   useEffect(() => {
     // Initialize Telegram Web App
@@ -59,14 +66,41 @@ function App() {
     return cleanupThemeListener;
   }, []);
 
+  // Use Telegram Native Main Button for a professional look
+  useEffect(() => {
+    if (window.Telegram && window.Telegram.WebApp) {
+      const tg = window.Telegram.WebApp;
+      
+      tg.MainButton.setParams({
+        text: showForm ? 'BACK TO LIST' : 'ADD NEW TENANT',
+        color: showForm ? '#6b7280' : '#2563eb', // Gray for back, Blue for add
+        is_visible: true
+      });
+
+      const toggleForm = () => setShowForm(prev => !prev);
+      tg.onEvent('mainButtonClicked', toggleForm);
+      
+      return () => tg.offEvent('mainButtonClicked', toggleForm);
+    }
+  }, [showForm]);
+
   const handleTenantAdded = (newTenant) => {
     setTenants([newTenant, ...tenants]);
     setShowForm(false);
+    // Trigger success haptic
+    if (window.Telegram?.WebApp?.HapticFeedback) {
+      window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+    }
   };
 
   const handleTogglePaid = async (id, currentStatus) => {
     // Optimistically update UI immediately
     setTenants(prev => prev.map(t => t.id === id ? { ...t, paidStatus: !currentStatus } : t));
+    
+    // Trigger light impact haptic
+    if (window.Telegram?.WebApp?.HapticFeedback) {
+      window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+    }
 
     try {
       await updateTenant(id, { paidStatus: !currentStatus });
@@ -84,12 +118,6 @@ function App() {
     <div className="min-h-screen bg-gray-100 p-4 font-sans" style={{ backgroundColor: 'var(--tg-theme-bg-color)' }}>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900" style={{ color: 'var(--tg-theme-text-color)' }}>Labader BMS Dashboard</h1>
-        <button 
-          onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium"
-        >
-          {showForm ? 'Cancel' : 'Add Tenant'}
-        </button>
       </div>
 
       {showForm && <AddTenantForm onTenantAdded={handleTenantAdded} />}
@@ -110,9 +138,25 @@ function App() {
         </div>
       </div>
 
-      <h2 className="text-xl font-bold mb-4 text-gray-900" style={{ color: 'var(--tg-theme-text-color)' }}>Tenant List</h2>
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="Search name or unit..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full p-3 rounded-xl border-none shadow-sm focus:ring-2 focus:ring-blue-500"
+          style={{ 
+            backgroundColor: 'var(--tg-theme-secondary-bg-color, #ffffff)', 
+            color: 'var(--tg-theme-text-color, #000000)' 
+          }}
+        />
+      </div>
+
+      <h2 className="text-xl font-bold mb-4 text-gray-900" style={{ color: 'var(--tg-theme-text-color)' }}>
+        {searchTerm ? `Search Results (${filteredTenants.length})` : 'Tenant List'}
+      </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {tenants.map(tenant => (
+        {filteredTenants.map(tenant => (
           <TenantCard key={tenant.id} tenant={tenant} onTogglePaid={handleTogglePaid} />
         ))}
       </div>

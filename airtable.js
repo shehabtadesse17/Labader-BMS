@@ -48,6 +48,7 @@ export const fetchTenants = async () => {
 };
 
 export const createTenant = async (tenantData) => {
+  console.log("Attempting to CREATE tenant. URL:", GOOGLE_SCRIPT_URL || "MISSING_URL");
   try {
     const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
@@ -60,7 +61,8 @@ export const createTenant = async (tenantData) => {
     });
 
     if (!response.ok) {
-      throw new Error(`Google Sheets API error: ${response.statusText}`);
+      const errorText = await response.text();
+      throw new Error(`Server responded with ${response.status}: ${errorText || response.statusText}`);
     }
     
     const text = await response.text();
@@ -68,11 +70,12 @@ export const createTenant = async (tenantData) => {
     try {
       data = JSON.parse(text);
     } catch (e) {
-      throw new Error("The server did not return valid JSON. Check your Google Script deployment.");
+      throw new Error(`Invalid JSON response during creation: ${text}`);
     }
     
     return { id: data.id, ...tenantData };
   } catch (error) {
+    console.error("Create Tenant Failed:", error);
     throw new Error(error.message || "Unknown error during creation");
   }
 };
@@ -90,7 +93,8 @@ export const updateTenant = async (id, fields) => {
     });
 
     if (!response.ok) {
-      throw new Error(`Google Sheets API error: ${response.statusText}`);
+      const errorText = await response.text();
+      throw new Error(`Server responded with ${response.status}: ${errorText || response.statusText}`);
     }
 
     const text = await response.text();
@@ -100,6 +104,7 @@ export const updateTenant = async (id, fields) => {
       return { id, ...fields }; // Fallback if script returns simple success
     }
   } catch (error) {
+    console.error("Update Tenant Failed:", error);
     throw new Error(error.message || "Failed to update tenant");
   }
 };
