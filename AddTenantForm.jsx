@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createTenant } from './airtable';
 
-const AddTenantForm = ({ onTenantAdded }) => {
+const AddTenantForm = ({ onTenantAdded, ownerId }) => {
   const [formData, setFormData] = useState({
     name: '',
     unitInfo: '',
@@ -40,7 +40,7 @@ const AddTenantForm = ({ onTenantAdded }) => {
         ...formData,
         monthlyRent: rent,
         dueDay: day,
-      });
+      }, ownerId);
       onTenantAdded(newTenant);
       setFormData({
         name: '',

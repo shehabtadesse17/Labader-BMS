@@ -16,14 +16,15 @@ if (!GOOGLE_SCRIPT_URL) {
   console.error("CRITICAL: VITE_GOOGLE_SCRIPT_URL is undefined. Check your .env file and ensure the variable starts with VITE_.");
 }
 
-export const fetchTenants = async () => {
+export const fetchTenants = async (ownerId) => {
   console.log("Fetch Initiated. URL:", GOOGLE_SCRIPT_URL || "MISSING_URL");
   try {
     if (!GOOGLE_SCRIPT_URL) {
       throw new Error("Cannot fetch: VITE_GOOGLE_SCRIPT_URL is missing.");
     }
 
-    const response = await fetch(GOOGLE_SCRIPT_URL, { redirect: 'follow' });
+    const url = `${GOOGLE_SCRIPT_URL}?ownerId=${ownerId}`;
+    const response = await fetch(url, { redirect: 'follow' });
     if (!response.ok) {
       throw new Error(`Server error: ${response.status}`);
     }
@@ -48,7 +49,7 @@ export const fetchTenants = async () => {
 };
 
 // Function to create a new tenant
-export const createTenant = async (tenantData) => {
+export const createTenant = async (tenantData, ownerId) => {
   console.log("Attempting to CREATE tenant. URL:", GOOGLE_SCRIPT_URL || "MISSING_URL");
   try {
     const response = await fetch(GOOGLE_SCRIPT_URL, {
@@ -58,7 +59,7 @@ export const createTenant = async (tenantData) => {
       headers: {
         'Content-Type': 'text/plain;charset=utf-8',
       },
-      body: JSON.stringify({ action: 'CREATE', data: tenantData }),
+      body: JSON.stringify({ action: 'CREATE', ownerId, data: tenantData }),
     });
 
     if (!response.ok) {
@@ -87,7 +88,7 @@ export const createTenant = async (tenantData) => {
 };
 
 // Function to update an existing tenant
-export const updateTenant = async (id, fields) => {
+export const updateTenant = async (id, fields, ownerId) => {
   try {
     const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
@@ -96,7 +97,7 @@ export const updateTenant = async (id, fields) => {
       headers: {
         'Content-Type': 'text/plain;charset=utf-8',
       },
-      body: JSON.stringify({ action: 'UPDATE', id, data: fields }),
+      body: JSON.stringify({ action: 'UPDATE', id, ownerId, data: fields }),
     });
 
     if (!response.ok) {
@@ -123,7 +124,7 @@ export const updateTenant = async (id, fields) => {
 };
 
 // Function to delete a tenant
-export const deleteTenant = async (id) => {
+export const deleteTenant = async (id, ownerId) => {
   try {
     const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
@@ -132,7 +133,7 @@ export const deleteTenant = async (id) => {
       headers: {
         'Content-Type': 'text/plain;charset=utf-8',
       },
-      body: JSON.stringify({ action: 'DELETE', id }),
+      body: JSON.stringify({ action: 'DELETE', id, ownerId }),
     });
 
     if (!response.ok) {
@@ -155,5 +156,43 @@ export const deleteTenant = async (id) => {
   } catch (error) {
     console.error("Delete Tenant Failed:", error);
     throw new Error(error.message || "Failed to delete tenant");
+  }
+};
+
+// New: Fetch Building Settings
+export const fetchSettings = async (ownerId) => {
+  try {
+    const url = `${GOOGLE_SCRIPT_URL}?action=GET_SETTINGS&ownerId=${ownerId}`;
+    const response = await fetch(url, { redirect: 'follow' });
+    if (!response.ok) throw new Error("Failed to fetch settings");
+    return await response.json();
+  } catch (error) {
+    console.error("Fetch Settings Failed:", error);
+    return { buildingName: 'Labader BMS', email: '' }; // Return default on error
+  }
+};
+
+// New: Update Building Settings
+export const updateSettings = async (ownerId, settingsData) => {
+  try {
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'cors',
+      redirect: 'follow',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8',
+      },
+      body: JSON.stringify({ 
+        action: 'UPDATE_SETTINGS', 
+        ownerId, 
+        data: settingsData 
+      }),
+    });
+    const data = await response.json();
+    if (data.status === 'error') throw new Error(data.message);
+    return true;
+  } catch (error) {
+    console.error("Update Settings Failed:", error);
+    throw error;
   }
 };
