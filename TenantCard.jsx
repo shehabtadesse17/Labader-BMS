@@ -10,7 +10,7 @@ const TenantCard = ({ tenant, onTogglePaid, onDelete }) => {
   const isOverdue = currentDayOfMonth > dueDay && !paidStatus;
 
   const cardClasses = `
-    bg-white p-4 rounded-lg shadow-md mb-4 flex flex-col
+    bg-white p-4 rounded-lg shadow-md mb-4
     ${isOverdue ? 'border-l-4 border-red-500' : 'border-l-4 border-transparent'}
     flex flex-col
   `;
@@ -24,6 +24,9 @@ const TenantCard = ({ tenant, onTogglePaid, onDelete }) => {
         day: 'numeric',
       })
     : 'N/A';
+
+  // Ensure monthlyRent is a number before calling toLocaleString
+  const displayMonthlyRent = !isNaN(Number(monthlyRent)) ? Number(monthlyRent).toLocaleString('en-ET') : 'N/A';
 
   return (
     <div className={cardClasses}>
