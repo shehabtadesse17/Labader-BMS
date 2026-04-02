@@ -76,7 +76,7 @@ const TenantCard = ({ tenant, onTogglePaid, onDelete }) => {
 
         {telegramUsername && (
           <a
-            href={`https://t.me/${telegramUsername.replace('@', '')}`}
+            href={`https://t.me/${telegramUsername.toString().replace('@', '')}`}
             className="flex-1 min-w-[60px] py-2 px-2 rounded bg-sky-500 text-white hover:bg-sky-600 transition font-bold text-xs text-center" // Telegram blue
           >
             Chat
@@ -85,8 +85,8 @@ const TenantCard = ({ tenant, onTogglePaid, onDelete }) => {
 
         {telegramUsername && (
           <a
-            href={`https://t.me/${telegramUsername.replace('@', '')}?text=${encodeURIComponent(
-              `Dear ${name}, just a friendly reminder that the rent for ${unitInfo} is now due. Total: ${monthlyRent.toLocaleString('en-ET')} ETB. Regards, Management.`
+            href={`https://t.me/${telegramUsername.toString().replace('@', '')}?text=${encodeURIComponent(
+              `Dear ${name}, just a friendly reminder that the rent for ${unitInfo} is now due. Total: ${displayMonthlyRent} ETB. Regards, Management.`
             )}`}
             className="flex-1 min-w-[60px] py-2 px-2 rounded bg-amber-500 text-white hover:bg-amber-600 transition font-bold text-xs text-center" // Amber for remind
           >
