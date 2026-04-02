@@ -1,6 +1,6 @@
 // Re-purposing airtable.js to use Google Sheets to avoid changing all imports
 
-let GOOGLE_SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
+let GOOGLE_SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL || "";
 
 // Robustly ensure the URL ends with /exec
 const normalizeUrl = (url) => {
