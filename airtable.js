@@ -13,14 +13,14 @@ const normalizeUrl = (url) => {
 GOOGLE_SCRIPT_URL = normalizeUrl(GOOGLE_SCRIPT_URL);
 
 if (!GOOGLE_SCRIPT_URL) {
-  console.error("CRITICAL: Google Script URL is missing! Ensure VITE_GOOGLE_SCRIPT_URL is defined in your .env file and starts with VITE_");
+  console.error("CRITICAL: VITE_GOOGLE_SCRIPT_URL is undefined. Check your .env file and ensure the variable starts with VITE_");
 }
 
 export const fetchTenants = async () => {
-  console.log("Attempting to fetch from:", GOOGLE_SCRIPT_URL || "UNDEFINED_URL");
+  console.log("Fetch Initiated. URL:", GOOGLE_SCRIPT_URL || "MISSING_URL");
   try {
     if (!GOOGLE_SCRIPT_URL) {
-      return []; // Return empty so the app doesn't crash, but log the error above
+      throw new Error("Cannot fetch: URL is missing.");
     }
 
     const response = await fetch(GOOGLE_SCRIPT_URL, { redirect: 'follow' });

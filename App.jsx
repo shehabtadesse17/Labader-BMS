@@ -21,6 +21,7 @@ function App() {
 
   useEffect(() => {
     // Initialize Telegram Web App
+    let cleanupThemeListener = () => {};
     if (window.Telegram && window.Telegram.WebApp) {
       const tg = window.Telegram.WebApp;
       
@@ -38,7 +39,7 @@ function App() {
       }
       applyTheme(); // Apply theme on initial load
       tg.onEvent('themeChanged', applyTheme); // Listen for theme changes
-      return () => tg.offEvent('themeChanged', applyTheme); // Clean up event listener
+      cleanupThemeListener = () => tg.offEvent('themeChanged', applyTheme);
     }
 
     // Fetch tenants from Airtable
@@ -54,6 +55,8 @@ function App() {
     };
 
     getTenants();
+
+    return cleanupThemeListener;
   }, []);
 
   const handleTenantAdded = (newTenant) => {
