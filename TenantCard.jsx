@@ -2,7 +2,7 @@
 import React from 'react';
 
 const TenantCard = ({ tenant, onTogglePaid }) => {
-  const { id, name, unitInfo, memberSince, monthlyRent, dueDay, paidStatus } = tenant;
+  const { id, name, unitInfo, phoneNumber, telegramUsername, memberSince, monthlyRent, dueDay, paidStatus } = tenant;
 
   // Rent Logic: Check if current date > Due Day AND paid_status is false
   const currentDate = new Date();
@@ -41,16 +41,48 @@ const TenantCard = ({ tenant, onTogglePaid }) => {
       <p className="text-gray-800 text-base font-semibold mt-auto">
         {monthlyRent.toLocaleString('en-ET')} ETB
       </p>
-      <button
-        onClick={() => onTogglePaid(id, paidStatus)}
-        className={`mt-4 py-2 px-4 rounded font-bold text-sm transition ${
-          paidStatus
-            ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            : 'bg-green-600 text-white hover:bg-green-700'
-        }`}
-      >
-        {paidStatus ? 'Mark as Unpaid' : 'Mark as Paid'}
-      </button>
+      
+      <div className="flex flex-wrap gap-2 mt-4">
+        <button
+          onClick={() => onTogglePaid(id, paidStatus)}
+          className={`flex-1 min-w-[80px] py-2 px-2 rounded font-bold text-xs transition ${
+            paidStatus
+              ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              : 'bg-green-600 text-white hover:bg-green-700'
+          }`}
+        >
+          {paidStatus ? 'Unpaid' : 'Paid'}
+        </button>
+        
+        {phoneNumber && (
+          <a
+            href={`tel:${phoneNumber}`}
+            className="flex-1 min-w-[60px] py-2 px-2 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 transition font-bold text-xs text-center border border-blue-200"
+          >
+            Call
+          </a>
+        )}
+
+        {telegramUsername && (
+          <a
+            href={`https://t.me/${telegramUsername.replace('@', '')}`}
+            className="flex-1 min-w-[60px] py-2 px-2 rounded bg-sky-500 text-white hover:bg-sky-600 transition font-bold text-xs text-center"
+          >
+            Chat
+          </a>
+        )}
+
+        {telegramUsername && (
+          <a
+            href={`https://t.me/${telegramUsername.replace('@', '')}?text=${encodeURIComponent(
+              `Dear ${name}, just a friendly reminder that the rent for ${unitInfo} is now due. Total: ${monthlyRent.toLocaleString('en-ET')} ETB. Regards, Management.`
+            )}`}
+            className="flex-1 min-w-[60px] py-2 px-2 rounded bg-amber-500 text-white hover:bg-amber-600 transition font-bold text-xs text-center"
+          >
+            Remind
+          </a>
+        )}
+      </div>
     </div>
   );
 };

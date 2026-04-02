@@ -7,6 +7,7 @@ import { fetchTenants, updateTenant } from './airtable';
 function App() {
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,6 +26,22 @@ function App() {
     t.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     t.unitInfo.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const loadData = async (isManual = false) => {
+    if (isManual) setRefreshing(true);
+    try {
+      const data = await fetchTenants();
+      setTenants(data);
+      if (isManual && window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+      }
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     // Initialize Telegram Web App
@@ -49,19 +66,7 @@ function App() {
       cleanupThemeListener = () => tg.offEvent('themeChanged', applyTheme);
     }
 
-    // Fetch tenants from Airtable
-    const getTenants = async () => {
-      try {
-        const data = await fetchTenants();
-        setTenants(data);
-      } catch (err) {
-        setError(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getTenants();
+    loadData();
 
     return cleanupThemeListener;
   }, []);
@@ -117,7 +122,23 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-100 p-4 font-sans" style={{ backgroundColor: 'var(--tg-theme-bg-color)' }}>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900" style={{ color: 'var(--tg-theme-text-color)' }}>Labader BMS Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900" style={{ color: 'var(--tg-theme-text-color)' }}>
+          Labader BMS
+        </h1>
+        <button 
+          onClick={() => loadData(true)}
+          disabled={refreshing}
+          className={`p-2 rounded-full transition-all ${refreshing ? 'opacity-50' : 'active:scale-90'}`}
+          title="Refresh Data"
+        >
+          <svg 
+            className={`w-6 h-6 ${refreshing ? 'animate-spin' : ''}`} 
+            style={{ color: 'var(--tg-theme-button-color, #2563eb)' }}
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </button>
       </div>
 
       {showForm && <AddTenantForm onTenantAdded={handleTenantAdded} />}

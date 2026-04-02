@@ -5,6 +5,8 @@ const AddTenantForm = ({ onTenantAdded }) => {
   const [formData, setFormData] = useState({
     name: '',
     unitInfo: '',
+    phoneNumber: '',
+    telegramUsername: '',
     memberSince: '',
     monthlyRent: '',
     dueDay: '',
@@ -43,6 +45,8 @@ const AddTenantForm = ({ onTenantAdded }) => {
       setFormData({
         name: '',
         unitInfo: '',
+        phoneNumber: '',
+        telegramUsername: '',
         memberSince: '',
         monthlyRent: '',
         dueDay: '',
@@ -75,6 +79,22 @@ const AddTenantForm = ({ onTenantAdded }) => {
           value={formData.unitInfo}
           onChange={handleChange}
           required
+          className="p-2 border rounded"
+        />
+        <input
+          type="tel"
+          name="phoneNumber"
+          placeholder="Phone Number (e.g. +251...)"
+          value={formData.phoneNumber}
+          onChange={handleChange}
+          className="p-2 border rounded"
+        />
+        <input
+          type="text"
+          name="telegramUsername"
+          placeholder="Telegram Username (without @)"
+          value={formData.telegramUsername}
+          onChange={handleChange}
           className="p-2 border rounded"
         />
         <input
