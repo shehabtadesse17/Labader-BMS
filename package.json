@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "homepage": "https://shehabtadesse17.github.io/Labader-BMS/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
