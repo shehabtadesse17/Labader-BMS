@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import TenantCard from './TenantCard';
 import AddTenantForm from './AddTenantForm';
-import { fetchTenants, updateTenant } from './airtable';
+import { fetchTenants, updateTenant, deleteTenant } from './airtable';
 
 function App() {
   const [tenants, setTenants] = useState([]);
@@ -13,14 +13,21 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Derived Stats calculated from actual data
-  const totalRevenue = Array.isArray(tenants) 
-    ? tenants.reduce((sum, t) => sum + (t ? Number(t.monthlyRent) || 0 : 0), 0) 
+  const totalRevenue = Array.isArray(tenants)
+    ? tenants.reduce((sum, t) => sum + (t && !isNaN(Number(t.monthlyRent)) ? Number(t.monthlyRent) : 0), 0)
     : 0;
     
+  const totalUnpaid = Array.isArray(tenants)
+    ? tenants.reduce((sum, t) => sum + (t && !t.paidStatus && !isNaN(Number(t.monthlyRent)) ? Number(t.monthlyRent) : 0), 0)
+    : 0;
+
   const occupancyRate = Array.isArray(tenants) ? Math.min(Math.round((tenants.length / 20) * 100), 100) : 0;
   
   const overdueCount = Array.isArray(tenants) ? tenants.filter(t => {
-    if (!t || typeof t.dueDay === 'undefined') return false;
+    if (!t || typeof t.dueDay === 'undefined' || isNaN(Number(t.dueDay))) {
+      console.warn("Tenant data missing or invalid dueDay:", t);
+      return false;
+    }
     const currentDate = new Date();
     const currentDayOfMonth = currentDate.getDate();
     return currentDayOfMonth > t.dueDay && !t.paidStatus;
@@ -28,10 +35,11 @@ function App() {
 
   // Filter tenants based on search term
   const filteredTenants = Array.isArray(tenants) ? tenants.filter(t => {
-    if (!t) return false;
+    if (!t || !t.name || !t.unitInfo) return false; // Ensure name and unitInfo exist for filtering
     const search = searchTerm.toLowerCase();
-    const nameMatch = (t.name || "").toString().toLowerCase().includes(search);
-    const unitMatch = (t.unitInfo || "").toString().toLowerCase().includes(search);
+    // Ensure properties are strings before calling toLowerCase
+    const nameMatch = String(t.name).toLowerCase().includes(search);
+    const unitMatch = String(t.unitInfo).toLowerCase().includes(search);
     return nameMatch || unitMatch;
   }) : [];
 
@@ -106,6 +114,28 @@ function App() {
     }
   };
 
+  const handleDeleteTenant = async (id) => {
+    const tg = window.Telegram?.WebApp;
+    // Use Telegram's native confirmation dialog if available, otherwise fallback to browser confirm
+    const confirmDelete = tg?.showConfirm 
+      ? await new Promise(resolve => tg.showConfirm("Are you sure you want to delete this tenant?", resolve))
+      : window.confirm("Are you sure you want to delete this tenant?");
+
+    if (!confirmDelete) return;
+
+    try {
+      await deleteTenant(id);
+      // Remove from local state immediately for a fast UI feel
+      setTenants(prev => prev.filter(t => t.id !== id));
+      
+      if (tg?.HapticFeedback) {
+        tg.HapticFeedback.notificationOccurred('success');
+      }
+    } catch (error) {
+      alert("Failed to delete: " + error.message);
+    }
+  };
+
   const handleTogglePaid = async (id, currentStatus) => {
     // Optimistically update UI immediately
     setTenants(prev => prev.map(t => t.id === id ? { ...t, paidStatus: !currentStatus } : t));
@@ -127,7 +157,7 @@ function App() {
   if (error) return <div className="p-4 text-center text-red-500">Error: {error.message}</div>;
   if (loading) return <div className="p-4 text-center text-gray-600">Loading tenants...</div>;
 
-  return (
+  return ( // Main container for the app
     <div className="min-h-screen bg-gray-100 p-4 font-sans" style={{ backgroundColor: 'var(--tg-theme-bg-color)' }}>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900" style={{ color: 'var(--tg-theme-text-color)' }}>
@@ -152,10 +182,14 @@ function App() {
       {showForm && <AddTenantForm onTenantAdded={handleTenantAdded} />}
 
       {/* Dashboard Summary Stats Placeholder */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-white p-4 rounded-lg shadow-md">
           <h2 className="text-lg font-semibold text-gray-700">Total Potential Revenue</h2>
           <p className="text-2xl font-bold text-green-600">ETB {totalRevenue.toLocaleString()}</p>
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow-md">
+          <h2 className="text-lg font-semibold text-gray-700">Total Unpaid</h2>
+          <p className="text-2xl font-bold text-orange-600">ETB {totalUnpaid.toLocaleString()}</p>
         </div>
         <div className="bg-white p-4 rounded-lg shadow-md">
           <h2 className="text-lg font-semibold text-gray-700">Occupancy Rate</h2>
@@ -187,8 +221,8 @@ function App() {
 
       {filteredTenants.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredTenants.map(tenant => (
-            <TenantCard key={tenant.id || Math.random()} tenant={tenant} onTogglePaid={handleTogglePaid} />
+          {filteredTenants.map(tenant => ( // Ensure tenant.id is unique and stable
+            <TenantCard key={tenant.id || Math.random()} tenant={tenant} onTogglePaid={handleTogglePaid} onDelete={handleDeleteTenant} />
           ))}
         </div>
       ) : (
