@@ -22,10 +22,11 @@ function App() {
   }).length : 0;
 
   // Filter tenants based on search term
-  const filteredTenants = tenants.filter(t => 
-    t.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    t.unitInfo.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredTenants = tenants.filter(t => {
+    const search = searchTerm.toLowerCase();
+    return (t.name || "").toString().toLowerCase().includes(search) || 
+           (t.unitInfo || "").toString().toLowerCase().includes(search);
+  });
 
   const loadData = async (isManual = false) => {
     if (isManual) setRefreshing(true);
